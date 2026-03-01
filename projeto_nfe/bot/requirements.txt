@@ -1,0 +1,10 @@
+# python-telegram-bot com extras de job-queue (APScheduler)
+python-telegram-bot[job-queue]>=21.0
+# Banco
+asyncpg>=0.29.0
+# Redis async
+redis>=5.0.0
+# Dotenv
+python-dotenv>=1.0.0
+# HTTP
+httpx>=0.27.0
