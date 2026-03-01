@@ -14,10 +14,9 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-import redis.asyncio as aioredis
-from telegram import PhotoSize, Message
-
 import db
+import redis.asyncio as aioredis
+from telegram import Message, PhotoSize
 
 log = logging.getLogger("bot.image_store")
 
@@ -55,15 +54,15 @@ async def save_photo(message: Message) -> dict | None:
 
     best_photo: PhotoSize = message.photo[-1]
 
-    user           = message.from_user
-    user_id        = user.id
-    username       = user.username or ""
-    full_name      = user.full_name or ""
-    message_id     = message.message_id
+    user = message.from_user
+    user_id = user.id
+    username = user.username or ""
+    full_name = user.full_name or ""
+    message_id = message.message_id
     file_unique_id = best_photo.file_unique_id
-    chat_id        = message.chat_id
+    chat_id = message.chat_id
 
-    filename   = build_filename(user_id, message_id, file_unique_id)
+    filename = build_filename(user_id, message_id, file_unique_id)
     images_dir = _get_images_dir()
     image_path = images_dir / filename
 
@@ -73,8 +72,12 @@ async def save_photo(message: Message) -> dict | None:
         await tg_file.download_to_drive(str(image_path))
         log.info(
             "Foto salva: %s | user=%d (%s) | msg=%d | size=%dx%d",
-            image_path, user_id, username, message_id,
-            best_photo.width, best_photo.height,
+            image_path,
+            user_id,
+            username,
+            message_id,
+            best_photo.width,
+            best_photo.height,
         )
     except Exception as exc:
         log.error("Erro ao baixar foto msg=%d: %s", message_id, exc, exc_info=True)
@@ -109,14 +112,16 @@ async def save_photo(message: Message) -> dict | None:
     except Exception as exc:
         log.error(
             "Erro ao publicar image_id=%d em queue:qr_parse: %s",
-            image_id, exc, exc_info=True,
+            image_id,
+            exc,
+            exc_info=True,
         )
 
     return {
-        "image_id":   image_id,
-        "filename":   filename,
-        "file_path":  str(image_path),
-        "user_id":    user_id,
-        "chat_id":    chat_id,
+        "image_id": image_id,
+        "filename": filename,
+        "file_path": str(image_path),
+        "user_id": user_id,
+        "chat_id": chat_id,
         "message_id": message_id,
     }

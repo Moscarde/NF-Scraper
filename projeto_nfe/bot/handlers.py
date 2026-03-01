@@ -13,13 +13,12 @@ Handlers registrados:
 
 import logging
 
-from telegram import Update, ReplyParameters
-from telegram.ext import ContextTypes
-from telegram.constants import ParseMode, ChatAction
-
 import db
-import state
 import image_store
+import state
+from telegram import ReplyParameters, Update
+from telegram.constants import ChatAction, ParseMode
+from telegram.ext import ContextTypes
 
 log = logging.getLogger("bot.handlers")
 
@@ -73,6 +72,7 @@ Use /start para ver as instruções ou envie diretamente uma foto com o QR Code\
 # Utilitários
 # ---------------------------------------------------------------------------
 
+
 def _escape(text: str) -> str:
     """Escapa caracteres especiais do MarkdownV2."""
     special = r"\_*[]()~`>#+-=|{}.!"
@@ -102,6 +102,7 @@ async def _ensure_user(update: Update) -> None:
 # Handlers
 # ---------------------------------------------------------------------------
 
+
 async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Responde ao /start com a mensagem de boas-vindas e (re)marca greeted."""
     await _ensure_user(update)
@@ -118,7 +119,9 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     )
 
 
-async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def handle_text_message(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     """
     Trata mensagens de texto:
       - Primeira mensagem → boas-vindas
@@ -154,12 +157,14 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
       4. Confirma recebimento em reply à foto
     """
     await _ensure_user(update)
-    user    = update.effective_user
+    user = update.effective_user
     message = update.message
 
     log.info(
         "Foto de user_id=%d msg_id=%d | %d variações de tamanho",
-        user.id, message.message_id, len(message.photo),
+        user.id,
+        message.message_id,
+        len(message.photo),
     )
 
     greeted = await db.was_greeted(user.id)
@@ -197,7 +202,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     log.info(
         "Foto processada: image_id=%d filename=%s user=%d",
-        metadata["image_id"], metadata["filename"], user.id,
+        metadata["image_id"],
+        metadata["filename"],
+        user.id,
     )
 
 

@@ -22,24 +22,18 @@ import signal
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-from telegram import Update
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    MessageHandler,
-    filters,
-)
-
 import db
 import handlers
+from dotenv import load_dotenv
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 # ---------------------------------------------------------------------------
 # Ambiente
 # ---------------------------------------------------------------------------
 load_dotenv()
 
-TOKEN     = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 IMAGES_DIR = os.getenv("IMAGES_DIR", "/app/received_images")
 
@@ -75,23 +69,20 @@ log = logging.getLogger("bot")
 # Application
 # ---------------------------------------------------------------------------
 
+
 def build_application() -> Application:
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", handlers.handle_start))
 
     app.add_handler(MessageHandler(filters.PHOTO, handlers.handle_photo))
-    app.add_handler(
-        MessageHandler(filters.Document.IMAGE, handlers.handle_photo)
-    )
+    app.add_handler(MessageHandler(filters.Document.IMAGE, handlers.handle_photo))
 
     app.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.handle_text_message)
     )
 
-    app.add_handler(
-        MessageHandler(filters.COMMAND, handlers.handle_unknown)
-    )
+    app.add_handler(MessageHandler(filters.COMMAND, handlers.handle_unknown))
 
     return app
 
@@ -99,6 +90,7 @@ def build_application() -> Application:
 # ---------------------------------------------------------------------------
 # Startup / Shutdown hooks
 # ---------------------------------------------------------------------------
+
 
 async def on_startup(app: Application) -> None:
     log.info("Inicializando pool Postgres...")
@@ -116,6 +108,7 @@ async def on_shutdown(app: Application) -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     log.info("=" * 55)
     log.info("Bot NFe iniciando...")
@@ -126,8 +119,8 @@ def main() -> None:
     Path(IMAGES_DIR).mkdir(parents=True, exist_ok=True)
 
     app = build_application()
-    app.post_init   = on_startup
-    app.post_stop   = on_shutdown
+    app.post_init = on_startup
+    app.post_stop = on_shutdown
 
     log.info("Polling iniciado. Pressione Ctrl+C para encerrar.")
     app.run_polling(

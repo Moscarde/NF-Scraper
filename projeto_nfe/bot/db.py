@@ -20,6 +20,7 @@ _pool: asyncpg.Pool | None = None
 # Pool
 # ---------------------------------------------------------------------------
 
+
 async def get_pool() -> asyncpg.Pool:
     """Retorna o pool, criando-o na primeira chamada."""
     global _pool
@@ -50,6 +51,7 @@ async def close_pool() -> None:
 # bronze.telegram_users
 # ---------------------------------------------------------------------------
 
+
 async def upsert_telegram_user(
     user_id: int,
     username: str | None,
@@ -67,7 +69,9 @@ async def upsert_telegram_user(
             full_name = EXCLUDED.full_name,
             last_seen = NOW()
         """,
-        user_id, username, full_name,
+        user_id,
+        username,
+        full_name,
     )
 
 
@@ -98,6 +102,7 @@ async def mark_greeted(user_id: int) -> None:
 # bronze.received_images
 # ---------------------------------------------------------------------------
 
+
 async def insert_received_image(
     filename: str,
     file_path: str,
@@ -126,13 +131,25 @@ async def insert_received_image(
         )
         RETURNING id
         """,
-        filename, file_path,
-        telegram_user_id, telegram_username, telegram_full_name,
-        chat_id, message_id,
-        file_unique_id, file_size, width, height, caption,
+        filename,
+        file_path,
+        telegram_user_id,
+        telegram_username,
+        telegram_full_name,
+        chat_id,
+        message_id,
+        file_unique_id,
+        file_size,
+        width,
+        height,
+        caption,
     )
     image_id: int = row["id"]
-    log.info("Imagem inserida em bronze.received_images: id=%d filename=%s", image_id, filename)
+    log.info(
+        "Imagem inserida em bronze.received_images: id=%d filename=%s",
+        image_id,
+        filename,
+    )
     return image_id
 
 
