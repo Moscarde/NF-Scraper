@@ -80,7 +80,9 @@ def fetch_nfe_html(url: str, timeout_resultado: int = 45) -> str | None:
                 nonlocal resultado_html
                 try:
                     if "resultadoQRCode" in response.url and response.status == 200:
-                        log.info("  Resposta resultadoQRCode capturada: %s", response.url)
+                        log.info(
+                            "  Resposta resultadoQRCode capturada: %s", response.url
+                        )
                         resultado_html = response.text()
                     else:
                         log.debug("  [resp] %s %s", response.status, response.url)

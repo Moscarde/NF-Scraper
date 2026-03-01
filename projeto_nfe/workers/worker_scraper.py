@@ -22,21 +22,20 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import db
 import httpx
 import redis.asyncio as aioredis
 from dotenv import load_dotenv
-
-import db
+from nfe_parser import parse_nfe_html
 from nfe_scraper import fetch_nfe_html
-from nfe_parser  import parse_nfe_html
 
 # ---------------------------------------------------------------------------
 # Ambiente e logging
 # ---------------------------------------------------------------------------
 load_dotenv()
 
-LOG_LEVEL       = os.getenv("LOG_LEVEL", "INFO").upper()
-BOT_TOKEN       = os.getenv("TELEGRAM_BOT_TOKEN", "")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 SCRAPED_HTML_DIR = Path(os.getenv("SCRAPED_HTML_DIR", "/app/scraped_html"))
 
 logging.basicConfig(
@@ -50,6 +49,7 @@ log = logging.getLogger("worker_scraper")
 # Telegram HTTP helper
 # ---------------------------------------------------------------------------
 
+
 async def telegram_reply(
     chat_id: int,
     reply_to_message_id: int,
@@ -61,10 +61,10 @@ async def telegram_reply(
         return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
-        "chat_id":             chat_id,
+        "chat_id": chat_id,
         "reply_to_message_id": reply_to_message_id,
-        "text":                text,
-        "parse_mode":          "MarkdownV2",
+        "text": text,
+        "parse_mode": "MarkdownV2",
     }
     try:
         async with httpx.AsyncClient(timeout=15) as client:
@@ -86,12 +86,21 @@ def _escape(text: str) -> str:
 # Formatação do resumo da nota
 # ---------------------------------------------------------------------------
 
+
 def _format_summary(header: dict, total_itens: int, valor_total: float | None) -> str:
     """Formata o resumo da NF-e em MarkdownV2 para enviar ao usuário."""
-    estab   = _escape(header.get("estabelecimento") or "Não identificado")
-    cnpj    = _escape(header.get("cnpj") or "")
+    estab = _escape(header.get("estabelecimento") or "Não identificado")
+    cnpj = _escape(header.get("cnpj") or "")
     endereco = _escape(header.get("endereco") or "")
-    valor_str = _escape(f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")) if valor_total else "N/A"
+    valor_str = (
+        _escape(
+            f"R$ {valor_total:,.2f}".replace(",", "X")
+            .replace(".", ",")
+            .replace("X", ".")
+        )
+        if valor_total
+        else "N/A"
+    )
 
     lines = [
         "✅ *Nota Fiscal processada com sucesso\\!*\n",
@@ -112,6 +121,7 @@ def _format_summary(header: dict, total_itens: int, valor_total: float | None) -
 # Processamento de uma imagem
 # ---------------------------------------------------------------------------
 
+
 async def process_image(image_id: int) -> None:
     log.info("Processando image_id=%d", image_id)
 
@@ -120,10 +130,10 @@ async def process_image(image_id: int) -> None:
         log.error("image_id=%d não encontrado no banco.", image_id)
         return
 
-    chat_id    = record["chat_id"]
+    chat_id = record["chat_id"]
     message_id = record["message_id"]
-    qr_url     = record.get("qr_url")
-    user_id    = record["telegram_user_id"]
+    qr_url = record.get("qr_url")
+    user_id = record["telegram_user_id"]
 
     if not qr_url:
         log.error("image_id=%d sem qr_url no banco.", image_id)
@@ -145,7 +155,12 @@ async def process_image(image_id: int) -> None:
     try:
         html = await loop.run_in_executor(None, fetch_nfe_html, qr_url)
     except Exception as exc:
-        log.error("Exceção no fetch_nfe_html para image_id=%d: %s", image_id, exc, exc_info=True)
+        log.error(
+            "Exceção no fetch_nfe_html para image_id=%d: %s",
+            image_id,
+            exc,
+            exc_info=True,
+        )
         html = None
 
     if not html:
@@ -164,7 +179,7 @@ async def process_image(image_id: int) -> None:
 
     # ── Persiste HTML ────────────────────────────────────────────────────
     SCRAPED_HTML_DIR.mkdir(parents=True, exist_ok=True)
-    ts       = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     html_name = f"{image_id}_{ts}.html"
     html_path = SCRAPED_HTML_DIR / html_name
 
@@ -213,7 +228,9 @@ async def process_image(image_id: int) -> None:
             raw_html_path=str(html_path),
         )
     except Exception as exc:
-        log.error("Erro ao inserir Silver image_id=%d: %s", image_id, exc, exc_info=True)
+        log.error(
+            "Erro ao inserir Silver image_id=%d: %s", image_id, exc, exc_info=True
+        )
         # Não interrompe — ainda atualiza status e notifica
 
     # ── Atualiza status sucesso ──────────────────────────────────────────
@@ -233,7 +250,8 @@ async def process_image(image_id: int) -> None:
 
     log.info(
         "image_id=%d user_id=%d scrape_status=success itens=%d valor=%.2f",
-        image_id, user_id,
+        image_id,
+        user_id,
         parsed["total_itens"],
         parsed["valor_total"] or 0,
     )
@@ -253,7 +271,7 @@ def _handle_sigterm(signum, frame):
 
 
 signal.signal(signal.SIGTERM, _handle_sigterm)
-signal.signal(signal.SIGINT,  _handle_sigterm)
+signal.signal(signal.SIGINT, _handle_sigterm)
 
 
 async def main() -> None:
@@ -278,7 +296,7 @@ async def main() -> None:
                     continue
 
                 _, raw_id = result
-                image_id  = int(raw_id)
+                image_id = int(raw_id)
                 log.info("Recebido da fila: image_id=%d", image_id)
 
                 try:
@@ -286,7 +304,9 @@ async def main() -> None:
                 except Exception as exc:
                     log.error(
                         "Erro não tratado ao processar image_id=%d: %s",
-                        image_id, exc, exc_info=True,
+                        image_id,
+                        exc,
+                        exc_info=True,
                     )
 
             except asyncio.CancelledError:

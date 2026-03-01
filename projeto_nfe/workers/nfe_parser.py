@@ -24,6 +24,7 @@ log = logging.getLogger("workers.nfe_parser")
 # Helpers de limpeza de texto
 # ---------------------------------------------------------------------------
 
+
 def _clean_number(text: str) -> float | None:
     """Remove espaços e troca vírgula por ponto. Retorna float ou None."""
     try:
@@ -45,6 +46,7 @@ def _extract_text(element, strip: bool = True) -> str:
 # Parse do cabeçalho
 # ---------------------------------------------------------------------------
 
+
 def _parse_header(soup: BeautifulSoup) -> dict[str, Any]:
     """
     Extrai dados do cabeçalho da NF-e.
@@ -52,16 +54,16 @@ def _parse_header(soup: BeautifulSoup) -> dict[str, Any]:
     """
     header: dict[str, Any] = {
         "estabelecimento": "",
-        "cnpj":            "",
-        "endereco":        "",
-        "chave_acesso":    "",
+        "cnpj": "",
+        "endereco": "",
+        "chave_acesso": "",
     }
 
     # Nome do estabelecimento — div/span com classes comuns no layout RJ
     for selector in [
-        ("div",  {"class": "txtTopo"}),
+        ("div", {"class": "txtTopo"}),
         ("span", {"class": "NomeEmit"}),
-        ("div",  {"id": "collapse1"}),
+        ("div", {"id": "collapse1"}),
     ]:
         tag, attrs = selector
         el = soup.find(tag, attrs)
@@ -100,6 +102,7 @@ def _parse_header(soup: BeautifulSoup) -> dict[str, Any]:
 # Parse dos itens
 # ---------------------------------------------------------------------------
 
+
 def _parse_items(soup: BeautifulSoup) -> list[dict[str, Any]]:
     """
     Extrai itens da tabela #tabResult.
@@ -121,11 +124,11 @@ def _parse_items(soup: BeautifulSoup) -> list[dict[str, Any]]:
 
         col_dados = cols[0]
 
-        nome_el    = col_dados.find("span", class_="txtTit")
-        codigo_el  = col_dados.find("span", class_="RCod")
-        qtd_el     = col_dados.find("span", class_="Rqtd")
-        un_el      = col_dados.find("span", class_="RUN")
-        vlunit_el  = col_dados.find("span", class_="RvlUnit")
+        nome_el = col_dados.find("span", class_="txtTit")
+        codigo_el = col_dados.find("span", class_="RCod")
+        qtd_el = col_dados.find("span", class_="Rqtd")
+        un_el = col_dados.find("span", class_="RUN")
+        vlunit_el = col_dados.find("span", class_="RvlUnit")
         vltotal_el = cols[1].find("span", class_="valor")
 
         if not nome_el:
@@ -153,14 +156,16 @@ def _parse_items(soup: BeautifulSoup) -> list[dict[str, Any]]:
         vltotal_raw = _extract_text(vltotal_el)
         valor_total = _clean_number(vltotal_raw)
 
-        items.append({
-            "descricao":      descricao,
-            "codigo":         codigo,
-            "quantidade":     quantidade,
-            "unidade":        un_raw,
-            "valor_unitario": valor_unitario,
-            "valor_total":    valor_total,
-        })
+        items.append(
+            {
+                "descricao": descricao,
+                "codigo": codigo,
+                "quantidade": quantidade,
+                "unidade": un_raw,
+                "valor_unitario": valor_unitario,
+                "valor_total": valor_total,
+            }
+        )
 
     return items
 
@@ -168,6 +173,7 @@ def _parse_items(soup: BeautifulSoup) -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # Função principal exportada
 # ---------------------------------------------------------------------------
+
 
 def parse_nfe_html(html: str) -> dict[str, Any]:
     """
@@ -190,7 +196,7 @@ def parse_nfe_html(html: str) -> dict[str, Any]:
     soup = BeautifulSoup(html, "html.parser")
 
     header = _parse_header(soup)
-    items  = _parse_items(soup)
+    items = _parse_items(soup)
 
     valor_total: float | None = None
     try:
@@ -200,11 +206,11 @@ def parse_nfe_html(html: str) -> dict[str, Any]:
         pass
 
     result = {
-        "header":       header,
-        "items":        items,
-        "total_itens":  len(items),
-        "valor_total":  valor_total,
-        "ok":           len(items) > 0,
+        "header": header,
+        "items": items,
+        "total_itens": len(items),
+        "valor_total": valor_total,
+        "ok": len(items) > 0,
     }
 
     log.info(

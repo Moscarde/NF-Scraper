@@ -20,20 +20,19 @@ import sys
 from pathlib import Path
 
 import cv2
+import db
 import httpx
 import redis.asyncio as aioredis
 from dotenv import load_dotenv
 from qreader import QReader
-
-import db
 
 # ---------------------------------------------------------------------------
 # Ambiente e logging
 # ---------------------------------------------------------------------------
 load_dotenv()
 
-LOG_LEVEL  = os.getenv("LOG_LEVEL", "INFO").upper()
-BOT_TOKEN  = os.getenv("TELEGRAM_BOT_TOKEN", "")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 IMAGES_DIR = Path(os.getenv("IMAGES_DIR", "/app/received_images"))
 
 logging.basicConfig(
@@ -50,6 +49,7 @@ _VALID_URL_PREFIX = "https://consultadfe.fazenda.rj.gov.br/"
 # Telegram HTTP helper
 # ---------------------------------------------------------------------------
 
+
 async def telegram_reply(
     chat_id: int,
     reply_to_message_id: int,
@@ -61,10 +61,10 @@ async def telegram_reply(
         return
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
-        "chat_id":              chat_id,
-        "reply_to_message_id":  reply_to_message_id,
-        "text":                 text,
-        "parse_mode":           "MarkdownV2",
+        "chat_id": chat_id,
+        "reply_to_message_id": reply_to_message_id,
+        "text": text,
+        "parse_mode": "MarkdownV2",
     }
     try:
         async with httpx.AsyncClient(timeout=15) as client:
@@ -85,6 +85,7 @@ def _escape(text: str) -> str:
 # ---------------------------------------------------------------------------
 # Leitura do QR Code
 # ---------------------------------------------------------------------------
+
 
 def decode_qr(image_path: Path) -> str | None:
     """
@@ -113,6 +114,7 @@ def decode_qr(image_path: Path) -> str | None:
 # Processamento de uma imagem
 # ---------------------------------------------------------------------------
 
+
 async def process_image(image_id: int, redis_client: aioredis.Redis) -> None:
     log.info("Processando image_id=%d", image_id)
 
@@ -122,10 +124,10 @@ async def process_image(image_id: int, redis_client: aioredis.Redis) -> None:
         log.error("image_id=%d não encontrado no banco.", image_id)
         return
 
-    chat_id    = record["chat_id"]
+    chat_id = record["chat_id"]
     message_id = record["message_id"]
-    file_path  = Path(record["file_path"])
-    user_id    = record["telegram_user_id"]
+    file_path = Path(record["file_path"])
+    user_id = record["telegram_user_id"]
 
     # ── qr_status = processing ──────────────────────────────────────────
     await db.set_qr_processing(image_id)
@@ -150,7 +152,9 @@ async def process_image(image_id: int, redis_client: aioredis.Redis) -> None:
     if not qr_text.startswith(_VALID_URL_PREFIX):
         log.warning(
             "image_id=%d — URL inválida: %r (não começa com %s)",
-            image_id, qr_text, _VALID_URL_PREFIX,
+            image_id,
+            qr_text,
+            _VALID_URL_PREFIX,
         )
         await db.set_qr_error(image_id)
         await telegram_reply(
@@ -185,7 +189,9 @@ async def process_image(image_id: int, redis_client: aioredis.Redis) -> None:
 
     log.info(
         "image_id=%d user_id=%d qr_status=success url=%s",
-        image_id, user_id, qr_text,
+        image_id,
+        user_id,
+        qr_text,
     )
 
 
@@ -203,7 +209,7 @@ def _handle_sigterm(signum, frame):
 
 
 signal.signal(signal.SIGTERM, _handle_sigterm)
-signal.signal(signal.SIGINT,  _handle_sigterm)
+signal.signal(signal.SIGINT, _handle_sigterm)
 
 
 async def main() -> None:
@@ -237,7 +243,9 @@ async def main() -> None:
                 except Exception as exc:
                     log.error(
                         "Erro não tratado ao processar image_id=%d: %s",
-                        image_id, exc, exc_info=True,
+                        image_id,
+                        exc,
+                        exc_info=True,
                     )
 
             except asyncio.CancelledError:

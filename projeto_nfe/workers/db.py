@@ -21,6 +21,7 @@ _pool: asyncpg.Pool | None = None
 # Pool
 # ---------------------------------------------------------------------------
 
+
 async def get_pool() -> asyncpg.Pool:
     global _pool
     if _pool is None:
@@ -50,6 +51,7 @@ async def close_pool() -> None:
 # bronze.received_images — leitura
 # ---------------------------------------------------------------------------
 
+
 async def get_image_by_id(image_id: int) -> dict[str, Any] | None:
     pool = await get_pool()
     row = await pool.fetchrow(
@@ -62,6 +64,7 @@ async def get_image_by_id(image_id: int) -> dict[str, Any] | None:
 # ---------------------------------------------------------------------------
 # bronze.received_images — atualização de status QR
 # ---------------------------------------------------------------------------
+
 
 async def set_qr_processing(image_id: int) -> None:
     pool = await get_pool()
@@ -83,7 +86,9 @@ async def set_qr_success(image_id: int, qr_text: str, qr_url: str) -> None:
             notified_qr = TRUE
         WHERE id = $1
         """,
-        image_id, qr_text, qr_url,
+        image_id,
+        qr_text,
+        qr_url,
     )
 
 
@@ -105,6 +110,7 @@ async def set_qr_error(image_id: int) -> None:
 # bronze.received_images — atualização de status scraping
 # ---------------------------------------------------------------------------
 
+
 async def set_scrape_processing(image_id: int) -> None:
     pool = await get_pool()
     await pool.execute(
@@ -125,7 +131,8 @@ async def set_scrape_success(image_id: int, html_path: str) -> None:
             notified_silver = TRUE
         WHERE id = $1
         """,
-        image_id, html_path,
+        image_id,
+        html_path,
     )
 
 
@@ -146,6 +153,7 @@ async def set_scrape_error(image_id: int) -> None:
 # ---------------------------------------------------------------------------
 # silver.nfe_headers + silver.nfe_items
 # ---------------------------------------------------------------------------
+
 
 async def insert_nfe_silver(
     image_id: int,
@@ -197,6 +205,8 @@ async def insert_nfe_silver(
 
     log.info(
         "Silver inserido: image_id=%d header_id=%d itens=%d",
-        image_id, header_id, len(items),
+        image_id,
+        header_id,
+        len(items),
     )
     return header_id
