@@ -1,0 +1,16 @@
+# QR Code
+qreader>=0.8.0
+opencv-python-headless>=4.9.0
+# Scraping
+playwright>=1.44.0
+# Parser HTML
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+# Banco
+asyncpg>=0.29.0
+# Redis async
+redis>=5.0.0
+# HTTP
+httpx>=0.27.0
+# Dotenv
+python-dotenv>=1.0.0
